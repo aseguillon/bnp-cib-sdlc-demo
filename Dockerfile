@@ -1,0 +1,8 @@
+FROM python:3.12-slim
+WORKDIR /srv
+COPY app/ app/
+ARG APP_VERSION=dev
+ENV APP_VERSION=$APP_VERSION PORT=8080
+EXPOSE 8080
+USER 1000
+CMD ["python", "-m", "app.main"]

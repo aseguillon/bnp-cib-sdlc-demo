@@ -1,0 +1,61 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  IMAGE: ghcr.io/${{ github.repository }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    outputs:
+      tag: ${{ steps.meta.outputs.tag }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: meta
+        run: echo "tag=${GITHUB_SHA::7}" >> "$GITHUB_OUTPUT"
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: docker/build-push-action@v6
+        with:
+          push: true
+          build-args: APP_VERSION=${{ steps.meta.outputs.tag }}
+          tags: ${{ env.IMAGE }}:${{ steps.meta.outputs.tag }}
+
+  deploy-demo:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: demo
+      url: https://demo.cib-trade-validation.example.com
+    steps:
+      - name: Deploy to DEMO
+        run: |
+          echo "Deploying ${{ env.IMAGE }}:${{ needs.build.outputs.tag }} to DEMO"
+          # Replace with real target, e.g. azure/container-apps-deploy-action or kubectl/helm
+      - name: Smoke test
+        run: echo "GET /health -> 200 (simulated)"
+
+  deploy-production:
+    needs: [build, deploy-demo]
+    runs-on: ubuntu-latest
+    # Environment "production" has required reviewers: the job pauses for approval.
+    environment:
+      name: production
+      url: https://cib-trade-validation.example.com
+    steps:
+      - name: Deploy to PRODUCTION
+        run: |
+          echo "Deploying ${{ env.IMAGE }}:${{ needs.build.outputs.tag }} to PRODUCTION"
+      - name: Smoke test
+        run: echo "GET /health -> 200 (simulated)"
