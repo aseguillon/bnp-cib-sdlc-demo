@@ -1,0 +1,48 @@
+name: Hello World (Actions 101)
+
+on:
+  workflow_dispatch:
+    inputs:
+      name:
+        description: Who to greet
+        default: BNP Paribas CIB
+  push:
+    paths: [".github/workflows/hello-world.yml"]
+
+permissions:
+  contents: read
+
+jobs:
+  hello:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Say hello
+        run: echo "Hello, ${{ inputs.name || 'BNP Paribas CIB' }}!"
+
+      - name: Context available to every run
+        run: |
+          echo "Repo:   $GITHUB_REPOSITORY"
+          echo "Branch: $GITHUB_REF_NAME"
+          echo "Commit: $GITHUB_SHA"
+          echo "Actor:  $GITHUB_ACTOR"
+
+      - uses: actions/checkout@v4          # equivalent of Jenkins 'checkout scm'
+      - name: Files in the repo
+        run: ls -la
+
+      - name: Job summary (shows on the run page)
+        run: |
+          echo "### Hello from GitHub Actions :wave:" >> "$GITHUB_STEP_SUMMARY"
+          echo "Triggered by **$GITHUB_ACTOR** on \`$GITHUB_REF_NAME\`" >> "$GITHUB_STEP_SUMMARY"
+
+  matrix-demo:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python: ["3.11", "3.12"]           # Jenkins: parallel stages / matrix axes
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - run: python --version && python -c "from app.main import validate_trade; print(validate_trade({'currency':'EUR','notional':1,'side':'BUY'}))"

@@ -2,12 +2,18 @@
 
 Story: a developer adds a rule to the *Trade Validation Service*, and ships it to Demo then Production with governance.
 
-**Prep (once):** `./scripts/setup.sh <org>/cib-trade-validation <approver-username>`
+**Prep (once):** `./scripts/setup.sh aseguillon/bnp-cib-sdlc-demo <approver-username>`
 (`demo` auto-deploys; `production` requires an approver; `main` is protected.)
+
+## 0. Hello World, Actions 101 (5 min)
+Repo: https://github.com/aseguillon/bnp-cib-sdlc-demo
+1. Open `legacy/Jenkinsfile` (their world today) next to `.github/workflows/ci.yml`; walk the table in `docs/BITBUCKET-JENKINS-TO-GITHUB.md`.
+2. Run the simplest workflow: `gh workflow run hello-world.yml -f name="BNP CIB" && gh run watch`
+3. Show the run page: log, job summary, matrix (3.11 / 3.12 in parallel), no Jenkins agent/plugin setup.
 
 ## 1. Clone & run (3 min)
 ```bash
-gh repo clone <org>/cib-trade-validation && cd cib-trade-validation
+gh repo clone aseguillon/bnp-cib-sdlc-demo && cd bnp-cib-sdlc-demo
 pip install -r requirements-dev.txt && python -m pytest -q
 python -m app.main &   # curl localhost:8080/health
 ```

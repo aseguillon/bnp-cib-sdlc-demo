@@ -1,0 +1,36 @@
+// REFERENCE ONLY: what a typical Bitbucket + Jenkins pipeline looks like today.
+// The GitHub equivalent is .github/workflows/ci.yml + deploy.yml
+@Library('cib-shared-lib') _                       // -> reusable workflows / composite actions
+
+pipeline {
+  agent { label 'linux-docker' }                   // -> runs-on: ubuntu-latest | self-hosted runner group
+  environment {
+    REGISTRY = 'artifactory.cib.example.com'
+    CREDS    = credentials('artifactory-svc')      // -> secrets / OIDC (no long-lived creds)
+  }
+  stages {
+    stage('Checkout') { steps { checkout scm } }   // -> actions/checkout
+    stage('Test') {
+      steps {
+        sh 'pip install -r requirements-dev.txt'
+        sh 'ruff check . && python -m pytest -q'
+      }
+    }
+    stage('Sonar / Security') {                    // -> CodeQL + dependency review (+ Sonar action if kept)
+      steps { sh 'sonar-scanner' }
+    }
+    stage('Build image') {
+      when { branch 'main' }                       // -> on: push: branches: [main]
+      steps { sh 'docker build -t $REGISTRY/trade-validation:$GIT_COMMIT .' }
+    }
+    stage('Deploy DEMO') {
+      when { branch 'main' }
+      steps { sh './deploy.sh demo' }              // -> environment: demo
+    }
+    stage('Approval') {
+      steps { input message: 'Deploy to PROD?', submitter: 'release-managers' }  // -> environment: production (required reviewers)
+    }
+    stage('Deploy PROD') { steps { sh './deploy.sh prod' } }
+  }
+  post { failure { mail to: 'team@cib.example.com', subject: 'Build failed' } }
+}
