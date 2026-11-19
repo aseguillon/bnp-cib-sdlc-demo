@@ -42,7 +42,7 @@ jobs:
         python: ["3.11", "3.12"]           # Jenkins: parallel stages / matrix axes
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v7
         with:
           python-version: ${{ matrix.python }}
       - run: python --version && python -c "from app.main import validate_trade; print(validate_trade({'currency':'EUR','notional':1,'side':'BUY'}))"
